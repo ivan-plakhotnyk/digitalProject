@@ -1,18 +1,28 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
+use work.DigEng.ALL;
+----------- Code must fall into this parameter to stay within the margins ----------- |
 
 entity param_single_cycle_processor is
-    generic(  gen : NATURAL  := 50); -- generic and vector sizes are wrong on purpose
+    generic( size     : NATURAL := 50;
+             num_regs : NATURAL := 8);
     Port (  CLK, RST, WEN, SEL : in STD_LOGIC; -- clock, reset, write enable, mux select
-            SH : in STD_LOGIC_VECTOR(gen-1 downto 0);
-            opcode : in STD_LOGIC_VECTOR (gen-1 downto 0);
-            IMM : in STD_LOGIC_VECTOR(gen-1 downto 0);
-            rreg_A : in STD_LOGIC_VECTOR(gen-1 downto 0);
-            rreg_B : in STD_LOGIC_VECTOR(gen-1 downto 0);
-            WREG : in STD_LOGIC_VECTOR(gen-1 downto 0);
-            PROC_OUT: out STD_LOGIC_VECTOR(gen-1 downto 0);
-            FLAGS : STD_LOGIC_VECTOR(7 downto 0)); -- fixed size
+            -- SH controls number of bits for shift
+            SH       : in  UNSIGNED(size-1 downto 0);
+            -- opcode controls ALU operation of fixed size
+            opcode   : in  STD_LOGIC_VECTOR (size-1 downto 0);
+            -- IMM input vector to processor (immediate value)
+            IMM      : in  STD_LOGIC_VECTOR(size-1 downto 0); 
+            -- RREG_A controls mux for register read channel A (thelog2 for addressing)
+            RREG_A   : in  UNSIGNED(log2(size)-1 downto 0); 
+            -- RREG_B controls mux for register read channel B
+            RREG_B   : in  UNSIGNED(size-1 downto 0); 
+            -- WREG controls active register when write enabled (encoded)
+            WREG     : in  UNSIGNED(log2(size)-1 downto 0); 
+            PROC_OUT : out STD_LOGIC_VECTOR(size-1 downto 0); -- system output
+            -- FLAGS display errors generated in process (fixed size)
+            FLAGS    : out STD_LOGIC_VECTOR(7 downto 0)); 
 end param_single_cycle_processor;
 
 architecture Behavioral of param_single_cycle_processor is
@@ -20,16 +30,44 @@ architecture Behavioral of param_single_cycle_processor is
     -- full description in state assignment
     -- IDLE : reset state, LOAD_B : R1 <= B(IMM), LOAD_A : R2 <= A(IMM)
     -- SET_BITS : R6 <= R0 + 1, 
-    type fsm_states is (IDLE, LOAD_B, LOAD_A, MASK, SET_BITS, TEST_BIT, ADD_A, SHIFT_B, SHIFT_A, UPDATE, OUTPUT);
+    type fsm_states is (IDLE, LOAD_B, LOAD_A, MASK, SET_BITS, TEST_BIT,
+                         ADD_A, SHIFT_B, SHIFT_A, UPDATE, OUTPUT);
     signal state, next_state : fsm_states; -- of type current state and next state
 
     -- add internal signals here
     signal START : STD_LOGIC; -- controls FSM transition from IDLE
-    signal alu_out : UNSIGNED(gen-1 downto 0); -- controls FSM transitions from TEST_BIT to OUTPUT
-    
+    signal ALU_OUT : STD_LOGIC_VECTOR(size-1 downto 0); -- controls FSM transitions from TEST_BIT to OUTPUT
+    signal mux_out: STD_LOGIC_VECTOR(size-1 downto 0);
+    signal reg_bank_out_B : STD_LOGIC_VECTOR(size-1 downto 0);
+    signal reg_bank_out_A : STD_LOGIC_VECTOR(size-1 downto 0);
 begin
     -- add combinational logic here
+    PROC_OUT <= STD_LOGIC_VECTOR(ALU_OUT);
+    mux_out <= (IMM) when SEL = '1' else
+               reg_bank_out_B; -- includes 0 and undefined
+   
+ALU_ent : entity work.param_alu
+    generic map (size => size)
+    port map(  A => STD_LOGIC_VECTOR(mux_out), -- input A of [data_size]
+               B => STD_LOGIC_VECTOR(reg_bank_out_A), -- input B of [data_size]
+               opcode => opcode, -- log2(13) => 4 bit addressing
+               SH     => SH, -- shift addressing
+               Output => ALU_OUT, -- ALU output [data_size]
+               flags  => FLAGS); -- 1 bit per flag (fixed 8-bit)
 
+reg_bank : entity work.param_reg_bank
+    generic map ( data_size => size, -- default bus size
+                  num_regs => num_regs) -- default number of registers
+    port map ( clk  => CLK,
+               rst  => RST, 
+               wen  => wen,
+               wreg => WREG, -- vector points to register being written to
+               r_reg_A => RREG_A, -- read reg bank A -- controls mux 1 for data output (read)
+               r_reg_B => RREG_B, -- read reg bank B -- controls mux 2 for data output (read)
+               D_in    => ALU_OUT, -- data input vector
+               D_out_A => reg_bank_out_A, -- data output vector from mux 1 (reg bank A)
+               D_out_B => reg_bank_out_B); -- data output vector from mux 2 (reg bank B)
+               
 -- define state assignment : state moves on rising edge if reset is low
 state_assignment : process (clk) is
 begin
@@ -63,11 +101,11 @@ begin
         when MASK => 
             next_state <= SET_BITS;
         -- set the number of bits to compare : R7 gets R6 shifted [SH] bits
-        when SET_BIT => 
+        when SET_BITS => 
             next_state <= TEST_BIT;
         -- bitwise AND of bit 0 and 1 :R3 <= R1 AND R6 (if bit 0 is high then transition)
         when TEST_BIT => 
-            if (ALU_OUT = 1) then
+            if (UNSIGNED(ALU_OUT) = 1) then
                 next_state <= ADD_A;
             else -- i.e. alu_out = 0
                 next_state <= SHIFT_A;
@@ -82,7 +120,7 @@ begin
         when SHIFT_A =>
             next_state <= UPDATE;
         when UPDATE =>
-            if (ALU_OUT > 0) then -- if theres still remaining bits then
+            if (UNSIGNED(ALU_OUT) > 0) then -- if theres still remaining bits then
                 next_state <= TEST_BIT; -- repeat process
             else -- i.e. operation complete : OUT <= R3
                 next_state <= OUTPUT; -- output result
