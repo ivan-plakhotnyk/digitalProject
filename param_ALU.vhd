@@ -33,9 +33,9 @@ int_compute <=  SIGNED(A)       when opcode = "0000" else -- A
                 SIGNED(A) + SIGNED(B) when opcode = "1010" else -- A + B
                 SIGNED(A) - SIGNED(B) when opcode = "1011" else -- A - B
                 SHIFT_LEFT(SIGNED(A), to_integer(SH))   when opcode = "1100" else -- shift left [SH] bits
-                SHIFT_RIGHT(SIGNED(A), to_integer(SH))  when opcode = "1100" else -- shift right [SH] bits
-                ROTATE_LEFT(SIGNED(A), to_integer(SH))  when opcode = "1100" else -- shift left [SH] bits
-                ROTATE_RIGHT(SIGNED(A), to_integer(SH)) when opcode = "1100" else -- shift left [SH] bits
+                SHIFT_RIGHT(SIGNED(A), to_integer(SH))  when opcode = "1101" else -- shift right [SH] bits
+                ROTATE_LEFT(SIGNED(A), to_integer(SH))  when opcode = "1110" else -- shift left [SH] bits
+                ROTATE_RIGHT(SIGNED(A), to_integer(SH)) when opcode = "1111" else -- shift left [SH] bits
                 (others => '0'); -- catch all
 
 
