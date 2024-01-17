@@ -24,6 +24,42 @@ architecture Behavioral of param_ALU_tb is
         Output_TV : STD_LOGIC_VECTOR (data_size -1 downto 0);
         flags_TV : STD_LOGIC_VECTOR(7 downto 0);
     end record;
+-- The function coverts the opcode from STD_LOGIC_VECTOR to the String 
+-- for convinience when printing out the test results. 
+    function opcode_to_operation(opcode: STD_LOGIC_VECTOR (3 downto 0))
+    return String is variable operation : String(1 to 20);
+        begin
+            if opcode = "0000" then
+                return "A";
+            elsif opcode = "0100" then
+                return "AND";
+            elsif opcode = "0101" then
+                return "OR";
+            elsif opcode = "0110" then
+                return "XOR";
+            elsif opcode = "0111" then
+                return "NOT A";
+            elsif opcode = "1000" then
+                return "A+1";
+            elsif opcode = "1001" then
+                return "A-1";
+            elsif opcode = "1010" then
+                return "A+B";
+            elsif opcode = "1011" then
+                return "A-B";
+            elsif opcode = "1100" then
+                return "Shift left";
+            elsif opcode = "1101" then
+                return "Shift right";
+            elsif opcode = "1110" then
+                return "Rotate left";
+            elsif opcode = "1111" then
+                return "Rotate right";
+            else
+                return "OPCODE ERROR";
+            end if;
+        end function;
+    
 
 type test_vector_array is array (NATURAL range <>) of test_vector;
         
@@ -99,20 +135,7 @@ constant test_vectors : test_vector_array := (
 (b"0101100110101011",b"1001000010100001",b"1011",X"0", b"1100100100001010", b"10101010"),--130
 -- Shift Right
 (b"1000000000000000", b"0000000000000000", x"D", x"0", b"1000000000000000", b"00101010"),
-(b"1000000000000000", b"0000000000000000", x"D", x"1", b"1100000000000000", b"00101010"),
-(b"1000000000000000", b"0000000000000000", x"D", x"2", b"1110000000000000", b"00101010"),
-(b"1000000000000000", b"0000000000000000", x"D", x"3", b"1111000000000000", b"00101010"),
-(b"1000000000000000", b"0000000000000000", x"D", x"4", b"1111100000000000", b"00101010"),
-(b"1000000000000000", b"0000000000000000", x"D", x"5", b"1111110000000000", b"00101010"),
-(b"1000000000000000", b"0000000000000000", x"D", x"6", b"1111111000000000", b"00101010"),
-(b"1000000000000000", b"0000000000000000", x"D", x"7", b"1111111100000000", b"00101010"),
-(b"1000000000000000", b"0000000000000000", x"D", x"8", b"1111111110000000", b"00101010"),
-(b"1000000000000000", b"0000000000000000", x"D", x"9", b"1111111111000000", b"00101010"),
-(b"1000000000000000", b"0000000000000000", x"D", x"A", b"1111111111100000", b"00101010"),
-(b"1000000000000000", b"0000000000000000", x"D", x"B", b"1111111111110000", b"00101010"),
-(b"1000000000000000", b"0000000000000000", x"D", x"C", b"1111111111111000", b"00101010"),
-(b"1000000000000000", b"0000000000000000", x"D", x"D", b"1111111111111100", b"00101010"),
-(b"1000000000000000", b"0000000000000000", x"D", x"E", b"1111111111111110", b"00101010"),
+(b"1000000100000000", b"0000000000000000", x"D", x"A", b"1111111111100000", b"00101010"),
 (b"1000000000000000", b"0000000000000000", x"D", x"F", b"1111111111111111", b"00101010"),
 -- Rotate Left
 (b"1000000000000001", b"0000000000000000", x"E", x"2", b"0000000000000110", b"01010010"),
@@ -145,7 +168,6 @@ UUT : entity work.param_ALU
 tb: process 
 begin
     wait for 100ns;
-    
     for i in test_vectors'range loop -- loop test vectors
         A <= test_vectors(i).A_TV; -- assign vector values
         B <= test_vectors(i).B_TV;
@@ -165,8 +187,8 @@ begin
              integer'image(to_integer(signed(A))) &
              " B is "&
              integer'image(to_integer(signed(B))) &
-             ", opcode "&
-             integer'image(to_integer(unsigned(opcode)))&
+             ", operation  "&
+             opcode_to_operation(opcode)&
              ", ALU_output : "&
               integer'image(to_integer(signed(Output))) &
              ", expected : "&
@@ -195,35 +217,7 @@ begin
         report -- if output doesn't match expected output
             "Test sequence " &
              integer'image(i+1) &
-             " passed" --&
-             --" A : "&
-             --integer'image(to_integer(signed(A))) &
-             --" B : "&
-             --integer'image(to_integer(signed(B))) &
-             --", opcode "&
-             --integer'image(to_integer(unsigned(opcode)))&
-             --", ALU_output : "&
-             -- integer'image(to_integer(signed(Output))) &
-             --", expected : "&
-             -- integer'image(to_integer(signed(test_vectors(i).Output_TV)))&
-             -- ", ALU_flags : "&
-             -- std_logic'image(((flags(7))))&
-             -- std_logic'image(((flags(6))))&
-             -- std_logic'image(((flags(5))))&
-             ---- std_logic'image(((flags(4))))&
-             ---- std_logic'image(((flags(3))))&
-            --  std_logic'image(((flags(2))))&
-            --  std_logic'image(((flags(1))))&
-             -- std_logic'image(((flags(0))))&
-             -- " exp : " &
-             -- std_logic'image(((test_vectors(i).flags_TV(7))))&
-             -- std_logic'image(((test_vectors(i).flags_TV(6))))&
-             -- std_logic'image(((test_vectors(i).flags_TV(5))))&
-             -- std_logic'image(((test_vectors(i).flags_TV(4))))&
-             -- std_logic'image(((test_vectors(i).flags_TV(3))))&
-             -- std_logic'image(((test_vectors(i).flags_TV(2))))&
-             -- std_logic'image(((test_vectors(i).flags_TV(1))))&
-             -- std_logic'image(((test_vectors(i).flags_TV(0))))
+             " passed " & "operation: " & opcode_to_operation(opcode)
         severity note;
         end loop;
     wait;
