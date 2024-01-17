@@ -6,7 +6,7 @@ use work.DigEng.ALL; -- allows use of logarithms
 entity param_ALU_tb is
 --  testbench empty entity
 end param_ALU_tb;
-
+ 
 architecture Behavioral of param_ALU_tb is
     constant data_size : NATURAL := 16; -- minimum 3 bits as log2(2)-1 = 1-1, 0 downto 0 error
     signal A : STD_LOGIC_VECTOR (data_size -1 downto 0);
