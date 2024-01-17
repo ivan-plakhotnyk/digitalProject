@@ -25,7 +25,7 @@ architecture Behavioral of param_ALU_tb is
         flags_TV : STD_LOGIC_VECTOR(7 downto 0);
     end record;
 -- The function coverts the opcode from STD_LOGIC_VECTOR to the String 
--- for convinience when printing out the test results. 
+-- name of operation for convinience when printing out the test results. 
     function opcode_to_operation(opcode: STD_LOGIC_VECTOR (3 downto 0))
     return String is variable operation : String(1 to 20);
         begin
