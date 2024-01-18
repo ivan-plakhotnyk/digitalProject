@@ -25,12 +25,13 @@ architecture Behavioral of param_ALU_tb is
 type test_vector_array is array (NATURAL range <>) of test_vector;
 constant test_vectors : test_vector_array := (
 -- Test vectors use a mixture of binary and hex representation, and do not include a 
---  usual indent due to margin restrictions.
--- ALU_OUT <= A,  opcode b"0000" = X"0"
+--  usual indent due to margin restrictions when reporting.
+---------------inputs-------------------|-control-|------------outputs-------------|
+-- ALU_OUT <= A
 -- 1. -ve, 2. +ve
 (b"1110011001101010",b"0000000000000000",X"0",X"0",b"1110011001101010",b"00101010"),--1
 (b"0010111100101111",b"0000000000000000",X"0",X"0",b"0010111100101111",b"01010010"),--2
--- ALU_OUT <= A & B, opcode b"0000" = X"0"
+-- ALU_OUT <= A & B
 -- 3. +ve +ve, 4. -ve -ve, 5. +ve -ve, 6. -ve +ve
 (b"0000000000000000",b"0111101001000100",X"4",X"0",b"0000000000000000",b"01100001"),--3
 (b"1000000000000000",b"1011111000101011",X"4",X"0",b"1000000000000000",b"00101010"),--4
@@ -52,65 +53,65 @@ constant test_vectors : test_vector_array := (
 -- -15. ve, 16. +ve
 (b"1110101011100010",b"0000000000000000",X"7",X"0",b"0001010100011101",b"01010010"),--15
 (b"0111111011111000",b"0000000000000000",X"7",X"0",b"1000000100000111",b"00101010"),--16
--- ALU_OUT <= A+1
+-- ALU_OUT <= A + 1
 -- 17. +ve, 18. -ve
 (b"0000001111000011",b"0000000000000000",X"8",X"0",b"0000001111000100",b"01010010"),--17
 (b"1111101100101010",b"0000000000000000",X"8",X"0",b"1111101100101011",b"00101010"),--18
--- ALU_OUT <= A-1
+-- ALU_OUT <= A - 1
 -- 19. -ve, 20. +ve
 (b"1101000100101100",b"0000000000000000",X"9",X"0",b"1101000100101011",b"00101010"),--19
 (b"0101100100011110",b"0000000000000000",X"9",X"0",b"0101100100011101",b"01010010"),--20
--- ALU_OUT <= A+B
+-- ALU_OUT <= A + B
 -- 21. +ve -ve, 22. -ve +ve, 23. +ve +ve, 24. -ve -ve
 (b"0111111111111111",b"1101000011101001",X"A",X"0",b"0101000011101000",b"01010010"),--21
 (b"1000000000000000",b"0111010110000111",X"A",X"0",b"1111010110000111",b"00101010"),--22
 (b"0100001010011010",b"0011000100001010",X"A",X"0",b"0111001110100100",b"01010010"),--23
 (b"1110100110010010",b"1110011011101011",X"A",X"0",b"1101000001111101",b"00101010"),--24
--- ALU_OUT <= A-B
+-- ALU_OUT <= A - B
 -- 25. +ve +ve, 26. -ve -ve, 27. -ve +ve, 28. +ve -ve
 (b"0111111111111111",b"0010000101111110",X"B",X"0",b"0101111010000001",b"01010010"),--25
 (b"1011000001101111",b"1110001100010110",X"B",X"0",b"1100110101011001",b"00101010"),--26
 (b"1010101111000001",b"0110111101010111",X"B",X"0",b"0011110001101010",b"11010010"),--27
 (b"0000011011010001",b"1111011010101100",X"B",X"0",b"0001000000100101",b"01010010"),--28
+--Shift left -- includes bit drop off
+(b"0000100000000000",b"0000000000000000",X"C",X"1",b"0001000000000000",b"01010010"),--29
+(b"0101000000000000",b"0000000000000000",X"C",X"3",b"0100000000000000",b"01010010"),--30
+(b"0000100000000000",b"0000000000000000",X"C",X"4",b"1000000000000000",b"00101010"),--31
+-- Shift Right -- includes bit drop off
+(b"1000000000000000",b"0000000000000000",X"D",X"0",b"1000000000000000",b"00101010"),--32
+(b"1000000000100000",b"0000000000000000",X"D",X"A",b"1111111111100000",b"00101010"),--33
+(b"1000000000000000",b"0000000000000000",X"D",X"F",b"1111111111111111",b"00101010"),--34
+-- Rotate Left -- includes bit retention
+(b"1000000000000001",b"0000000000000000",X"E",X"2",b"0000000000000110",b"01010010"),--35
+(b"1000000000000001",b"0000000000000000",X"E",X"1",b"0000000000000011",b"01010010"),--36
+(b"1000000000000001",b"0000000000000000",X"E",X"0",b"1000000000000001",b"00101010"),--37
+-- Rotate Right -- includes bit retention
+(b"1000000000000001",b"0000000000000000",X"F",X"1",b"1100000000000000",b"00101010"),--38
+(b"1000000000000001",b"0000000000000000",X"F",X"2",b"0110000000000000",b"01010010"),--39
+(b"1000000000000001",b"0000000000000000",X"F",X"3",b"0011000000000000",b"01010010"),--40
 -- overflow flag tests
--- A+1 : Addition
--- 29. flag case 1 : +ve + +ve = -ve
-(b"0111111111111111",b"0000000000000000",X"8",X"0",b"1000000000000000",b"10101010"),--29
--- A-1 : Subtraction
--- 30. flag case 3 : -ve - +ve = +ve
-(b"1000000000000000",b"0000000000000000",X"9",X"0",b"0111111111111111",b"11010010"),--30
--- A+B : Addition
--- 31, 32. flag case 1 : +ve + +ve = -ve
-(b"0010010000100101",b"0110110011110101",X"A",X"0",b"1001000100011010",b"10101010"),--31
-(b"0101100110111110",b"0101001001011010",X"A",X"0",b"1010110000011000",b"10101010"),--32
+-- A+B
+-- 41. flag case 1 : +ve + +ve = -ve, 42. flag case 2 : -ve + -ve = +ve
+(b"0010010000100101",b"0110110011110101",X"A",X"0",b"1001000100011010",b"10101010"),--41
+(b"1101100110111110",b"1010010010110100",X"A",X"0",b"0111111001110010",b"11010010"),--42
 -- A-B : Subtraction
--- 33, 34. flag case 3 : -ve - +ve = +ve, 35,36. flag case 4 : +ve - -ve = -ve
-(b"1010101111000001",b"0110111101010111",X"B",X"0",b"0011110001101010",b"11010010"),--33
-(b"1000000011000111",b"0110101101100011",X"B",X"0",b"0001010101100100",b"11010010"),--34
-(b"0101010011110010",b"1011100101110001",X"B",X"0",b"1001101110000001",b"10101010"),--35
-(b"0101100110101011",b"1001000010100001",X"B",X"0",b"1100100100001010",b"10101010"),--36
+-- 43. flag case 3 : -ve - +ve = +ve, 44. flag case 4 : +ve - -ve = -ve
+(b"1000000011000111",b"0110101101100011",X"B",X"0",b"0001010101100100",b"11010010"),--43
+(b"0101010011110010",b"1011100101110001",X"B",X"0",b"1001101110000001",b"10101010"),--44
+-- A+1 
+-- 45. flag case 5 : A + 1 < A
+(b"0111111111111111",b"0000000000000000",X"8",X"0",b"1000000000000000",b"10101010"),--45
+-- A-1 : Subtraction
+-- 46. flag case 6 : A - 1 > A
+(b"1000000000000000",b"0000000000000000",X"9",X"0",b"0111111111111111",b"11010010"),--46
 -- end of overflow testing
---Shift left
-(b"0000100000000000",b"0000000000000000",X"C",X"1",b"0001000000000000",b"01010010"),--37
-(b"0101000000000000",b"0000000000000000",X"C",X"3",b"0100000000000000",b"01010010"),--37
-(b"0000100000000000",b"0000000000000000",X"C",X"4",b"1000000000000000",b"00101010"),--39
--- Shift Right
-(b"1000000000000000",b"0000000000000000",X"D",X"0",b"1000000000000000",b"00101010"),--40
-(b"1000000000100000",b"0000000000000000",X"D",X"A",b"1111111111100000",b"00101010"),--41
-(b"1000000000000000",b"0000000000000000",X"D",X"F",b"1111111111111111",b"00101010"),--42
--- Rotate Left
-(b"1000000000000001",b"0000000000000000",X"E",X"2",b"0000000000000110",b"01010010"),--43
-(b"1000000000000001",b"0000000000000000",X"E",X"1",b"0000000000000011",b"01010010"),--44
-(b"1000000000000001",b"0000000000000000",X"E",X"0",b"1000000000000001",b"00101010"),--45
--- Rotate Right
-(b"1000000000000001",b"0000000000000000",X"F",X"1",b"1100000000000000",b"00101010"),--46
-(b"1000000000000001",b"0000000000000000",X"F",X"2",b"0110000000000000",b"01010010"),--47
-(b"1000000000000001",b"0000000000000000",X"F",X"3",b"0011000000000000",b"01010010"),--48
--- intentionally wrong: 2 + 2 = 5
-(b"0000000000000010",b"0000000000000010",X"A",X"0",b"0000000000000101",b"01010010")--49
+-- 47. intentionally wrong: 2 + 2 = 5
+(b"0000000000000010",b"0000000000000010",X"A",X"0",b"0000000000000101",b"01010010") --47
 );
--- The function coverts the opcode from STD_LOGIC_VECTOR to the String 
--- name of operation for convinience when printing out the test results. 
+-- The purpose of this function is to convert the opcode from type STD_LOGIC_VECTOR to 
+--  type String, containing the name of the ALU operation for convinience when printing
+--  out the test results.
+--  e.g. "Test passed operation 8" becomes "Test passed operation A+1"
 function opcode_to_operation(opcode: STD_LOGIC_VECTOR (3 downto 0))
 return String is variable operation : String(1 to 20);
 begin
@@ -155,8 +156,8 @@ UUT : entity work.param_ALU
                    flags => flags);
 -- TESTING STRATEGY -- 
 -- This testbench aims to verify the operation of a parameterizable ALU by using test
---  vectors to test every type of operation of varying combinations of positive and 
---  negavtive input pairs and also the overflow flag cases. There is no clock process
+--  vectors to test every type of operation with varying combinations of positive and 
+--  negavtive input pairs, and also the overflow flag cases. There is no clock process
 --  in this testbench so there is no sync to falling edge or waits dependent on period.
 TEST: process 
 begin
@@ -178,7 +179,7 @@ begin
              " failed : " &
              " A is "& integer'image(to_integer(signed(A))) &
              " B is "& integer'image(to_integer(signed(B))) &
-             ", opcode "& integer'image(to_integer(unsigned(opcode)))&
+             ", operation: " & opcode_to_operation(opcode) &
              ", ALU_output : "& integer'image(to_integer(signed(Output))) &
              ", expected : "& 
              integer'image(to_integer(signed(test_vectors(i).Output_TV)))&
