@@ -3,21 +3,21 @@ use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
 use work.DigEng.all; -- allows the use of logarithms
 -- This entity describes a paramtereizable register bank made up of n-bit registers
---  (DFFs) that can take any two inputs vectors with a single write but dual read
---  (read two output registers at once).
+--  (DFFs) that takes one input vector, which can be written to a single register at 
+--  a time, and outputs two vectors, which can be read from two registers simultaneously.
 entity param_reg_bank is
     generic ( data_size : NATURAL := 16; -- default bus size
               num_regs : NATURAL := 8); -- default number of registers
     Port ( -- control signals
            clk, rst, wen : in STD_LOGIC; -- clock, reset, write enable - single bit
            -- wreg vector points to register being written to
-           wreg : in UNSIGNED(log2(num_regs)-1 downto 0); 
-           -- read reg bank A -- controls mux 1 for data output (read)
+           wreg    : in UNSIGNED(log2(num_regs)-1 downto 0); 
+           -- read reg bank A -- controls mux 1 for data output A (read)
            r_reg_A : in UNSIGNED(log2(num_regs)-1 downto 0); 
-           -- read reg bank B -- controls mux 2 for data output (read)
+           -- read reg bank B -- controls mux 2 for data output B (read)
            r_reg_B : in UNSIGNED(log2(num_regs)-1 downto 0); 
            -- I/O vectors
-           D_in : in STD_LOGIC_VECTOR (data_size - 1 downto 0); -- data input vector
+           D_in    : in STD_LOGIC_VECTOR (data_size - 1 downto 0); -- data input vector
             -- data output vector from mux 1 (reg bank A)
            D_out_A : out STD_LOGIC_VECTOR (data_size -1 downto 0);
            -- data output vector from mux 2 (reg bank B)
